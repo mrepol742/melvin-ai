@@ -33,6 +33,7 @@ export default function RootLayout({
     >
       <head>
         <meta name="hostname" content="ai.melvinjonesrepol.com" />
+        <link rel="canonical" href="https://ai.melvinjonesrepol.com" />
       </head>
       <body className="antialiased">{children}</body>
     </html>
