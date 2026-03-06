@@ -10,20 +10,12 @@ export default function Layout({ children }: { children: ReactNode }) {
   const toggleSidebar = () => setIsOpen(!isOpen);
 
   return (
-    <div className="flex">
-      <div
-        className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-neutral-900 transform transition-transform duration-300
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:static lg:translate-x-0
-        `}
-      >
-        <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
-      </div>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
 
-      <div className="flex flex-col flex-1 min-h-screen bg-black-400">
+      <div className="flex flex-col flex-1 transition-all duration-300">
         <Navbar toggleSidebar={toggleSidebar} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 bg-gray-100 overflow-hidden">{children}</main>
       </div>
     </div>
   );
