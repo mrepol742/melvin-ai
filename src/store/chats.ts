@@ -4,16 +4,19 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import { storage } from "@/lib/storage";
 
 const MessageSchema = z.object({
   role: z.enum(["user", "bot"]),
   content: z.string(),
+  created_at: z.coerce.date(),
 });
 
 const ChatSchema = z.object({
   id: z.string(),
   title: z.string(),
   messages: z.array(MessageSchema),
+  created_at: z.coerce.date(),
 });
 
 export type Message = z.infer<typeof MessageSchema>;
@@ -23,6 +26,9 @@ interface ChatStore {
   chats: Chat[];
   activeChatId: string | null;
   activeChatTitle: string | null;
+  hasHydrated: boolean;
+
+  setHasHydrated: (state: boolean) => void;
   setActiveChat: (id: string, title: string) => void;
   addChat: () => string;
   addMessage: (chatId: string, message: Message) => void;
@@ -34,6 +40,9 @@ export const useChatStore = create<ChatStore>()(
       chats: [],
       activeChatId: null,
       activeChatTitle: null,
+      hasHydrated: false,
+
+      setHasHydrated: (state) => set({ hasHydrated: state }),
 
       setActiveChat: (id, title) =>
         set({ activeChatId: id, activeChatTitle: title }),
@@ -43,6 +52,7 @@ export const useChatStore = create<ChatStore>()(
           id: uuidv4(),
           title: "New Chat",
           messages: [],
+          created_at: new Date(),
         };
         set((state) => ({
           chats: [newChat, ...state.chats],
@@ -71,32 +81,17 @@ export const useChatStore = create<ChatStore>()(
       },
     }),
     {
-      name: "chats-storage", // key in localStorage
+      name: "chats-storage",
+      storage: storage,
+
       partialize: (state) => ({
         chats: state.chats,
         activeChatId: state.activeChatId,
+        activeChatTitle: state.activeChatTitle,
       }),
-      // Validate with Zod when rehydrating
-      storage: {
-        getItem: (name) => {
-          const str = localStorage.getItem(name);
-          if (!str) return null;
-          try {
-            const parsed = JSON.parse(str);
-            const chats = z.array(ChatSchema).safeParse(parsed.state.chats);
-            return {
-              state: {
-                chats: chats.success ? chats.data : [],
-                activeChatId: parsed.state.activeChatId ?? null,
-              },
-            };
-          } catch {
-            return null;
-          }
-        },
-        setItem: (name, value) =>
-          localStorage.setItem(name, JSON.stringify(value)),
-        removeItem: (name) => localStorage.removeItem(name),
+
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
       },
     },
   ),

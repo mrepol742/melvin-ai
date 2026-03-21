@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "devtools-detector": "^2.0.25",
+    "idb": "^8.0.3",
     "lucide-react": "^0.541.0",
     "next": "16.0.10",
     "nextjs-toploader": "^3.9.17",

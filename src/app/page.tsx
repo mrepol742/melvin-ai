@@ -7,9 +7,10 @@ import { Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { timeAgo } from "@/utils/time";
 
 export default function Melvin() {
-  const { chats, activeChatId, addMessage } = useChatStore();
+  const { chats, activeChatId, addMessage, addChat } = useChatStore();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -19,11 +20,19 @@ export default function Melvin() {
   const handleSubmit = (input: string) => {
     if (!input.trim() || !activeChatId) return;
 
-    addMessage(activeChatId, { role: "user", content: input });
+    addMessage(activeChatId, {
+      role: "user",
+      content: input,
+      created_at: new Date(),
+    });
     setInput("");
 
     setTimeout(() => {
-      addMessage(activeChatId, { role: "bot", content: "🤖 Dummy response" });
+      addMessage(activeChatId, {
+        role: "bot",
+        content: "🤖 Dummy response",
+        created_at: new Date(),
+      });
     }, 800);
   };
 
@@ -36,6 +45,10 @@ export default function Melvin() {
       }
     }
   };
+
+  useEffect(() => {
+    addChat();
+  }, []);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -63,74 +76,89 @@ export default function Melvin() {
             </div>
           ) : (
             activeChat?.messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex items-end gap-2 ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
+              <>
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    msg.role === "user" ? "hidden" : "bg-gray-300 text-gray-800"
+                  key={i}
+                  className={`flex items-end gap-2 ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {msg.role === "user" ? "U" : "B"}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      msg.role === "user"
+                        ? "hidden"
+                        : "bg-gray-300 text-gray-800"
+                    }`}
+                  >
+                    {msg.role === "user" ? "U" : "B"}
+                  </div>
+
+                  <div
+                    className={`max-w-md px-4 py-3 rounded-2xl text-sm shadow break-words whitespace-pre-wrap ${
+                      msg.role === "user"
+                        ? "bg-gray-800 text-white rounded-br-none"
+                        : "bg-gray-300 text-gray-800 rounded-bl-none"
+                    }`}
+                  >
+                    <ReactMarkdown
+                      children={msg.content}
+                      components={{
+                        code({ node, inline, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || "");
+                          if (inline) {
+                            return (
+                              <code
+                                className="px-1 rounded font-mono"
+                                {...props}
+                              >
+                                {children}
+                              </code>
+                            );
+                          } else {
+                            return (
+                              <SyntaxHighlighter
+                                style={oneDark}
+                                language={match ? match[1] : "text"}
+                                PreTag="div"
+                                className="rounded-md text-sm"
+                                {...props}
+                              >
+                                {String(children).replace(/\n$/, "")}
+                              </SyntaxHighlighter>
+                            );
+                          }
+                        },
+                      }}
+                    />
+                  </div>
+
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      msg.role === "user" ? "bg-gray-800 text-white" : "hidden"
+                    }`}
+                  >
+                    {msg.role === "user" ? "U" : "B"}
+                  </div>
                 </div>
 
-                <div
-                  className={`max-w-md px-4 py-3 rounded-2xl text-sm shadow break-words whitespace-pre-wrap ${
-                    msg.role === "user"
-                      ? "bg-gray-800 text-white rounded-br-none"
-                      : "bg-gray-300 text-gray-800 rounded-bl-none"
+                <span
+                  className={`flex text-gray-500 text-sm gap-2 ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <ReactMarkdown
-                    children={msg.content}
-                    components={{
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || "");
-                        if (inline) {
-                          return (
-                            <code className="px-1 rounded font-mono" {...props}>
-                              {children}
-                            </code>
-                          );
-                        } else {
-                          return (
-                            <SyntaxHighlighter
-                              style={oneDark}
-                              language={match ? match[1] : "text"}
-                              PreTag="div"
-                              className="rounded-md text-sm"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, "")}
-                            </SyntaxHighlighter>
-                          );
-                        }
-                      },
-                    }}
-                  />
-                </div>
-
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    msg.role === "user" ? "bg-gray-800 text-white" : "hidden"
-                  }`}
-                >
-                  {msg.role === "user" ? "U" : "B"}
-                </div>
-              </div>
+                  {timeAgo(msg.created_at.toString())}
+                </span>
+              </>
             ))
           )}
           <div ref={messagesEndRef} />
         </div>
 
         <div className="sticky bottom-0 bg-white border-t p-4">
-          <div className="flex items-end gap-3 max-w-4xl mx-auto w-full">
+          <div className="flex items-end mx-auto w-full border border-gray-300 rounded">
             <textarea
               ref={textareaRef}
-              className="flex-1 border border-gray-300 text-black rounded-xl px-4 py-3 text-sm resize-none overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 text-black px-4 py-3 text-sm resize-none overflow-y-auto"
               placeholder="Type your message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -144,9 +172,9 @@ export default function Melvin() {
                   setInput("");
                 }
               }}
-              className="px-5 py-3 bg-gray-800 text-white text-sm rounded-xl hover:bg-gray-700 transition"
+              className="px-5 py-3 bg-gray-800 text-sm rounded hover:bg-gray-700 transition"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </button>
           </div>
         </div>
