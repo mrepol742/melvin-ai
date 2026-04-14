@@ -6,7 +6,7 @@ import { useChatStore } from "@/store/chats";
 import { Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { timeAgo } from "@/utils/time";
 
 export default function Melvin() {
@@ -103,30 +103,18 @@ export default function Melvin() {
                     <ReactMarkdown
                       children={msg.content}
                       components={{
-                        code({ node, inline, className, children, ...props }) {
+                        code({ className, children }) {
                           const match = /language-(\w+)/.exec(className || "");
-                          if (inline) {
-                            return (
-                              <code
-                                className="px-1 rounded font-mono"
-                                {...props}
-                              >
-                                {children}
-                              </code>
-                            );
-                          } else {
-                            return (
-                              <SyntaxHighlighter
-                                style={oneDark}
-                                language={match ? match[1] : "text"}
-                                PreTag="div"
-                                className="rounded-md text-sm"
-                                {...props}
-                              >
-                                {String(children).replace(/\n$/, "")}
-                              </SyntaxHighlighter>
-                            );
-                          }
+                          return (
+                            <SyntaxHighlighter
+                              style={atomDark as { [key: string]: React.CSSProperties }}
+                              language={match ? match[1] : "text"}
+                              PreTag="div"
+                              className="rounded-md text-sm"
+                            >
+                              {String(children).replace(/\n$/, "")}
+                            </SyntaxHighlighter>
+                          );
                         },
                       }}
                     />
